@@ -4,10 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-
+import numpy as np
+import torch.nn.functional as F
+import copy
 from fairseq import tokenizer
 from fairseq.data import data_utils, FairseqDataset, iterators, Dictionary
 
+use_cuda = torch.cuda.is_available()
+device   = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class FairseqTask(object):
     """
@@ -205,6 +209,154 @@ class FairseqTask(object):
                 match_source_len=getattr(args, 'match_source_len', False),
                 no_repeat_ngram_size=getattr(args, 'no_repeat_ngram_size', 0),
             )
+
+    def get_adv_batch(self, sample, model, criterion, optimizer, args, src_cands, tgt_cands, task, epoch, ignore_grad=False): 
+        
+        model.train()
+        loss, sample_size, logging_output = criterion(model, sample)
+        if ignore_grad:
+            loss *= 0
+        optimizer.backward(loss)
+
+        src_embeddings_grad   = model.encoder.embed_tokens.weight.grad.clone().detach()
+        src_embeddings_grad   = src_embeddings_grad[sample['net_input']['src_tokens']]
+        src_embeddings_weight = model.encoder.embed_tokens.weight.clone().detach()
+
+        tgt_embeddings_grad   = model.decoder.embed_tokens.weight.grad.clone().detach()
+        tgt_embeddings_grad   = tgt_embeddings_grad[sample['net_input']['prev_output_tokens']]
+        tgt_embeddings_weight = model.decoder.embed_tokens.weight.clone().detach()
+
+        sample_adv = copy.deepcopy(sample)
+
+        sample_adv['net_input']['src_tokens'], sample_adv['net_input']['src_lengths'] = self.get_adv_token(sample, src_cands, src_embeddings_weight, src_embeddings_grad, \
+                                                                                                           task.source_dictionary, args, for_src=True)
+
+        sample_adv['net_input']['prev_output_tokens'], sample_adv['target'] = self.get_adv_token(sample, tgt_cands, tgt_embeddings_weight, tgt_embeddings_grad, \
+                                                                                                 task.target_dictionary, args, for_src=False)       
+        
+        return sample_adv
+        
+
+    def get_adv_token(self, batch, cands, embeddings_weight, gradients, dictionary, args, for_src):
+        
+        if for_src:
+            embeddings = embeddings_weight[batch['net_input']['src_tokens']] # B x S(pad sent eos) x D
+        else:
+            embeddings = embeddings_weight[batch['net_input']['prev_output_tokens']] # B x S(eos sent pad) x D
+
+        batch_offset, batch_cands, batch_cands_mask, cands_replace = cands[int(batch['id'][0])] # batch_offset no eos version
+        
+        ''' Orig Offsetwise Embedding & Gradient Average '''
+
+        batch_offset  = torch.tensor(batch_offset).long().to(device)
+        batch_size    = batch_offset.size(0) 
+        offset_size   = int(batch_offset.max() + 1) # eos
+        seq_size      = batch_offset.size(1)
+        mask          = torch.zeros(batch_size, offset_size, seq_size).to(device)
+        mask.scatter_(1,batch_offset.unsqueeze(1),1) # B O S // 0 = pad
+        eos  = torch.zeros(batch_size, offset_size, 1).to(device)
+
+        if for_src:
+            mask = torch.cat([mask, eos], dim = 2) 
+        else:
+            mask = torch.cat([eos, mask], dim = 2)
+
+        # reverify
+
+        mask  = F.normalize(mask, p=1, dim = 2)
+        embedding_offset = torch.bmm(mask, embeddings)[:,1:,:]
+        gradient_offset  = torch.bmm(mask, gradients)[:,1:,:]
+        
+        ''' Cands Offsetwise Embedding Average '''
+
+        batch_cands        = torch.tensor(batch_cands).long().to(device)  
+        mask               = torch.tensor(batch_cands_mask).type(torch.FloatTensor).to(device)
+        mask               = F.normalize(mask, p=1, dim=3)
+        batch_cands_embeds = embeddings_weight[batch_cands]
+
+        mask               = mask.reshape(-1, mask.size(2), mask.size(3)) # BO x N x C
+        embeddings         = batch_cands_embeds.reshape(-1, batch_cands_embeds.size(2), batch_cands_embeds.size(3)) # BO x C x 512
+        embeddings         = torch.bmm(mask, embeddings) # BO x N x 512
+        embeddings         = embeddings.reshape(batch_size, -1, embeddings.size(1), embeddings.size(2))
+
+        ''' Getting Similarity '''
+    
+        embeddings = embeddings - embedding_offset.unsqueeze(2) # (B S 1 H // B S C H) -> B S C H
+        
+        sim = F.cosine_similarity(embeddings, gradient_offset.unsqueeze(2), dim=3) # normalizing
+        sim = torch.max(sim, dim=2)[1] # TODO : CHANGE
+        sim = np.array(sim.cpu())
+
+        # TODO : parallel? More fast version?
+
+        if for_src:
+            adv_batch_idx = []
+        else:
+            adv_batch_idx = [] 
+            adv_tgt_idx   = []
+
+        max_sequence = 0
+
+        for i, sent_idx in enumerate(sim):
+            adv_sent_idx = []
+
+            for j, adv_idx in enumerate(sent_idx):
+                if j > len(cands_replace[i])-1:
+                    continue
+                if for_src:
+                    if np.random.uniform(0,1) > (1-args.src_pert_prob): # probability
+                        adv_sent_idx.append(cands_replace[i][j][adv_idx])
+                    else:
+                        adv_sent_idx.append(cands_replace[i][j][0])
+                if not for_src:
+                    if np.random.uniform(0,1) > (1-args.tgt_pert_prob): # probability
+                        adv_sent_idx.append(cands_replace[i][j][adv_idx])
+                    else:
+                        adv_sent_idx.append(cands_replace[i][j][0])
+
+            adv_sent_idx = sum(adv_sent_idx, [])
+
+            if len(adv_sent_idx) > max_sequence:
+                max_sequence = len(adv_sent_idx)
+
+            adv_batch_idx.append(np.array(adv_sent_idx))
+
+            if not for_src:
+                adv_sent_idx = np.concatenate((adv_sent_idx, np.array([dictionary.eos()])),axis=0)
+                adv_tgt_idx.append(adv_sent_idx)
+
+        adv_batch_idx = np.array(adv_batch_idx)
+
+        eos = torch.Tensor(batch_size, 1).fill_(dictionary.eos()).long().to(device)
+
+        if not for_src:
+            adv_tgt_idx         = np.array(adv_tgt_idx)
+            adv_prev_tgt_padded = list(map(lambda x: self.pad_seq_tgt(x, max_sequence, dictionary), adv_batch_idx))            
+            adv_tgt_padded      = list(map(lambda x: self.pad_seq_tgt(x, max_sequence+1, dictionary), adv_tgt_idx))
+            adv_prev_tgt_padded = torch.tensor(np.array(adv_prev_tgt_padded)).long().to(device)
+            adv_tgt_padded      = torch.tensor(np.array(adv_tgt_padded)).long().to(device)
+            adv_prev_tgt_tokens = torch.cat([eos, adv_prev_tgt_padded], dim = 1)
+
+            return adv_prev_tgt_tokens, adv_tgt_padded
+
+        else:
+            adv_src_padded = list(map(lambda x: self.pad_seq_src(x, max_sequence, dictionary), adv_batch_idx))
+            adv_src_padded = torch.tensor(np.array(adv_src_padded)).long().to(device)
+            adv_src_tokens = torch.cat([adv_src_padded, eos], dim = 1)
+            adv_src_length = torch.sum(adv_src_tokens!=dictionary.pad(), dim =1)
+
+            return adv_src_tokens, adv_src_length       
+
+    def pad_seq_src(self, sample, max_sequence, dictionary):
+        temp = np.full(max_sequence, dictionary.pad())
+        temp[max_sequence-len(sample):] = sample
+        return temp.astype(int)
+
+
+    def pad_seq_tgt(self, sample, max_sequence, dictionary):
+        temp = np.full(max_sequence, dictionary.pad())
+        temp[:len(sample)] = sample
+        return temp.astype(int)
 
     def train_step(self, sample, model, criterion, optimizer, ignore_grad=False):
         """

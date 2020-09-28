@@ -18,9 +18,18 @@ from fairseq.data import iterators
 from fairseq.trainer import Trainer
 from fairseq.meters import AverageMeter, StopwatchMeter
 
+try:
+    import nsml
+    from nsml import DATASET_PATH
+    from nsml import SESSION_NAME
+except:
+    pass
 
 def main(args, init_distributed=False):
+
     utils.import_user_module(args)
+
+    args.save_dir = DATASET_PATH + '/FAIR/Checkpoints/IWSLT15_CS_EN_BASE'
 
     assert args.max_tokens is not None or args.max_sentences is not None, \
         'Must specify batch size either with --max-tokens or --max-sentences'
