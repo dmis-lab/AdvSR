@@ -13,3 +13,4 @@ import fairseq.optim  # noqa
 import fairseq.optim.lr_scheduler  # noqa
 import fairseq.pdb  # noqa
 import fairseq.tasks  # noqa
+import fairseq.advsr

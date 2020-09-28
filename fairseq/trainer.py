@@ -20,7 +20,6 @@ from fairseq import checkpoint_utils, distributed_utils, models, optim, utils
 from fairseq.meters import AverageMeter, StopwatchMeter, TimeMeter
 from fairseq.optim import lr_scheduler
 
-
 class Trainer(object):
     """Main class for data parallel training.
 
@@ -216,7 +215,7 @@ class Trainer(object):
             epoch=epoch,
         )
 
-    def train_step_adv(self, samples, args, src_cands, tgt_cands, task, epoch, dummy_batch=False, raise_oom=False):
+    def train_step_adv(self, samples, args, src_cands, tgt_cands, task, dummy_batch=False, raise_oom=False):
         """Do forward, backward and parameter update."""
         if self._dummy_batch is None:
             self._dummy_batch = samples[0]
@@ -267,7 +266,7 @@ class Trainer(object):
                     # get adv samples
                                         
                     adv_sample = self.task.get_adv_batch(
-                        sample, self.model, self.criterion, self.optimizer, args, src_cands, tgt_cands, task, epoch, ignore_grad, 
+                        sample, self.model, self.criterion, self.optimizer, args, src_cands, tgt_cands, task, ignore_grad, 
                     )
                     adv_samples.append(adv_sample)
                     self.zero_grad() # only train with adv_samples
@@ -428,7 +427,7 @@ class Trainer(object):
 
         return logging_output
 
-    def train_step(self, samples, dummy_batch=False, raise_oom=False):
+    def train_step(self, samples, args, src_cands, tgt_cands, task, dummy_batch=False, raise_oom=False):
         """Do forward, backward and parameter update."""
         if self._dummy_batch is None:
             self._dummy_batch = samples[0]
@@ -443,6 +442,8 @@ class Trainer(object):
 
         # forward and backward pass
         logging_outputs, sample_sizes, ooms = [], [], 0
+        adv_samples = []
+
         for i, sample in enumerate(samples):
             sample = self._prepare_sample(sample)
             if sample is None:
@@ -468,17 +469,25 @@ class Trainer(object):
                 else:
                     return contextlib.ExitStack()  # dummy contextmanager
 
-            try:
-                with maybe_no_sync():
-                    # forward and backward
-                    loss, sample_size, logging_output = self.task.train_step(
-                        sample, self.model, self.criterion, self.optimizer,
-                        ignore_grad
-                    )
+            try: # training with original segmentation or the adversarial ones
+                if not args.adv_sr:
+                    with maybe_no_sync():
+                        # forward and backward
+                        loss, sample_size, logging_output = self.task.train_step(
+                            sample, self.model, self.criterion, self.optimizer,
+                            ignore_grad
+                        )
+                    if not ignore_grad:
+                        logging_outputs.append(logging_output)
+                        sample_sizes.append(sample_size)
+                else:
+                    with maybe_no_sync():
+                        adv_sample = self.task.get_adv_batch(
+                            sample, self.model, self.criterion, self.optimizer, args, src_cands, tgt_cands, task, ignore_grad, 
+                        )
+                        adv_samples.append(adv_sample)
+                        self.zero_grad() # only train with adv_samples
 
-                if not ignore_grad:
-                    logging_outputs.append(logging_output)
-                    sample_sizes.append(sample_size)
             except RuntimeError as e:
                 if 'out of memory' in str(e):
                     msg = (
@@ -498,6 +507,49 @@ class Trainer(object):
                 else:
                     raise e
 
+        if args.adv_sr:
+            for i, adv_sample in enumerate(adv_samples):
+                
+                sample = self._prepare_sample(adv_sample)
+
+                if sample is None:
+                    # when sample is None, run forward/backward on a dummy batch
+                    # and ignore the resulting gradients
+                    sample = self._prepare_sample(self._dummy_batch)
+                    ignore_grad = True
+                else:
+                    ignore_grad = False
+
+                try:
+                    with maybe_no_sync():
+                        # forward and backward
+                        loss, sample_size, logging_output = self.task.train_step(
+                            sample, self.model, self.criterion, self.optimizer, ignore_grad
+                        )
+                        
+                    if not ignore_grad:
+                        logging_outputs.append(logging_output)
+                        sample_sizes.append(sample_size)
+
+                except RuntimeError as e:
+                    if 'out of memory' in str(e):
+                        msg = (
+                            '| WARNING: ran out of memory with exception: '
+                            + '{};'.format(e)
+                            + '\n Skipping batch'
+                            )
+                            # TODO: print should really go to logger, this print goes
+                            # to stdout, which is buffered, which in many case is not
+                            # printed out if another exception happens
+                            # print(msg)
+                        print(msg, file=sys.stderr)
+                        if raise_oom:
+                            raise ValueError(msg)
+                        ooms += 1
+                        self.zero_grad()
+                    else:
+                        raise e
+    
         if ooms > 0 and self._oom_batch is not None:
             self.handle_ooms(ooms)
 

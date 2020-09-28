@@ -210,7 +210,7 @@ class FairseqTask(object):
                 no_repeat_ngram_size=getattr(args, 'no_repeat_ngram_size', 0),
             )
 
-    def get_adv_batch(self, sample, model, criterion, optimizer, args, src_cands, tgt_cands, task, epoch, ignore_grad=False): 
+    def get_adv_batch(self, sample, model, criterion, optimizer, args, src_cands, tgt_cands, task, ignore_grad=False): 
         
         model.train()
         loss, sample_size, logging_output = criterion(model, sample)
@@ -280,7 +280,7 @@ class FairseqTask(object):
         embeddings         = embeddings.reshape(batch_size, -1, embeddings.size(1), embeddings.size(2))
 
         ''' Getting Similarity '''
-    
+
         embeddings = embeddings - embedding_offset.unsqueeze(2) # (B S 1 H // B S C H) -> B S C H
         
         sim = F.cosine_similarity(embeddings, gradient_offset.unsqueeze(2), dim=3) # normalizing
@@ -357,6 +357,7 @@ class FairseqTask(object):
         temp = np.full(max_sequence, dictionary.pad())
         temp[:len(sample)] = sample
         return temp.astype(int)
+
 
     def train_step(self, sample, model, criterion, optimizer, ignore_grad=False):
         """

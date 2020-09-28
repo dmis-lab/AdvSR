@@ -13,23 +13,39 @@ import random
 
 import torch
 
+import sentencepiece as sp
+
 from fairseq import checkpoint_utils, distributed_utils, options, progress_bar, tasks, utils
 from fairseq.data import iterators
 from fairseq.trainer import Trainer
 from fairseq.meters import AverageMeter, StopwatchMeter
 
+from fairseq.advsr import get_candidates
+
 try:
     import nsml
     from nsml import DATASET_PATH
     from nsml import SESSION_NAME
+    USE_NSML=True
 except:
+    USE_NSML=False
     pass
 
 def main(args, init_distributed=False):
 
-    utils.import_user_module(args)
+    # NSML TEMP TODO: REMOVE
+    if USE_NSML:
+        args.data     = DATASET_PATH + '/FAIR/Data/{}'.format(args.data)
+        args.save_dir = DATASET_PATH + '/FAIR/Checkpoints/{}'.format(args.save_dir)
+        args.sp_model = args.data + '/sentencepiece.bpe.model'
+    
+    if args.adv_sr:
+        print("| training with AdvSR")
+        print("| loading tokenizer")
+        tokenizer = sp.SentencePieceProcessor()
+        tokenizer.Load(args.sp_model)
 
-    args.save_dir = DATASET_PATH + '/FAIR/Checkpoints/IWSLT15_CS_EN_BASE'
+    utils.import_user_module(args)  
 
     assert args.max_tokens is not None or args.max_sentences is not None, \
         'Must specify batch size either with --max-tokens or --max-sentences'
@@ -76,6 +92,11 @@ def main(args, init_distributed=False):
     # corresponding train iterator
     extra_state, epoch_itr = checkpoint_utils.load_checkpoint(args, trainer)
 
+    if args.adv_sr:
+        src_cands, tgt_cands = get_candidates(epoch_itr, args, tokenizer, task)
+    else:
+        src_cands = None ; tgt_cands = None
+
     # Train until the learning rate gets too small
     max_epoch = args.max_epoch or math.inf
     max_update = args.max_update or math.inf
@@ -86,7 +107,7 @@ def main(args, init_distributed=False):
     valid_subsets = args.valid_subset.split(',')
     while lr > args.min_lr and epoch_itr.epoch < max_epoch and trainer.get_num_updates() < max_update:
         # train for one epoch
-        train(args, trainer, task, epoch_itr)
+        train(args, trainer, task, epoch_itr, src_cands, tgt_cands)
 
         if not args.disable_validation and epoch_itr.epoch % args.validate_interval == 0:
             valid_losses = validate(args, trainer, task, epoch_itr, valid_subsets)
@@ -107,7 +128,7 @@ def main(args, init_distributed=False):
     print('| done training in {:.1f} seconds'.format(train_meter.sum))
 
 
-def train(args, trainer, task, epoch_itr):
+def train(args, trainer, task, epoch_itr, src_cands, tgt_cands):
     """Train the model for one epoch."""
     # Update parameters every N batches
     update_freq = args.update_freq[epoch_itr.epoch - 1] \
@@ -127,7 +148,9 @@ def train(args, trainer, task, epoch_itr):
     valid_subsets = args.valid_subset.split(',')
     max_update = args.max_update or math.inf
     for i, samples in enumerate(progress, start=epoch_itr.iterations_in_epoch):
-        log_output = trainer.train_step(samples)
+        if args.adv_sr:
+            log_output = trainer.train_step(samples, args, src_cands, tgt_cands, task)
+
         if log_output is None:
             continue
 
@@ -295,6 +318,13 @@ def distributed_main(i, args, start_rank=0):
 
 def cli_main():
     parser = options.get_training_parser()
+
+    parser.add_argument("--adv_sr",          action='store_true', default=False,  help='whether to train with Adv SR') 
+    parser.add_argument("--num_cands",       default=9,           type=int,       help='pre-defined number of segmentation candidates')
+    parser.add_argument("--src_pert_prob",   default=0.33,        type=float,     help='perturbation ratio for the source sentence')
+    parser.add_argument("--tgt_pert_prob",   default=0.33,        type=float,     help='perturbation ratio for the target sentence')
+    parser.add_argument("--sp_model",        required=True,       help='directory to sentencepiece module for pre-segmenting candidates')
+    
     args = options.parse_args_and_arch(parser)
 
     if args.distributed_init_method is None:
