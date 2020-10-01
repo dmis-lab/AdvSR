@@ -44,7 +44,6 @@ We use the [Fairseq](https://github.com/pytorch/fairseq) (v0.8.0) for training, 
 
 ### Datasets
 
-You can run ```bash get_data_iwslt15_cs_en.sh``` for downloading and preprocessing the dataset of IWSLT15_CS_EN.
 The preprocessed dataset can be downloaded from the following link.
 
 - [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
@@ -79,7 +78,7 @@ make inference CUDA=${CUDA} TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en SP_MODEL=${S
 
 ### Result
 
-The results are as follows.
+The result is as follows.
 
 ```bash
 BLEU+case.lc+lang.cs-en+numrefs.1+smooth.exp+test.iwslt15/tst2013+tok.13a+version.1.4.2 = 32.5 66.6/40.4/26.5/18.1 (BP = 0.963 ratio = 0.963 hyp_len = 26497 ref_len = 27502)
