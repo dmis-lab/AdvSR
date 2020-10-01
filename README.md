@@ -1,5 +1,3 @@
-# Adversarial Subword Regualrization for Robust Neural Machine Translation
-
 ## Overview
 
 <h3 align="center">
@@ -16,7 +14,9 @@
   <img alt="intro" src="https://github.com/JJumSSu/AdvSR/blob/master/img/figure.png" width="400px">
 </div>
 
-We utilize gradient signals for exposing diverse, yet adversarial subword sequence for effectively regularizing NMT models.
+we present AdvSR to study whether gradient signals during training can be a substitute criterion for choosing segmentation among candidates.
+NMT models suffer from typos(character drop, character swap) in the source text due to the unseen subword compositions ( _ denotes segmentation). 
+On the other hand, our method correctly decodes them by exposing diverse, yet adversarial subword sequence for effectively regularizing NMT models in low-resource datasets.
 
 ## Requirements
 
@@ -28,10 +28,11 @@ $ pip install sentencepiece
 $ conda install pytorch=1.1.0 cudatoolkit=9.0 -c pytorch
 ```
 
-Once you cloned the github, run
+Clone & Build
 
 ```
-$ cd Source_Codes
+$ git clone https://github.com/JJumSSu/AdvSR.git
+$ cd AdvSR
 $ pip install .
 ```
 
