@@ -16,7 +16,7 @@
 
 we present AdvSR to study whether gradient signals during training can be a substitute criterion for choosing segmentation among candidates.
 NMT models suffer from typos(character drop, character swap) in the source text due to the unseen subword compositions ( _ denotes segmentation). 
-On the other hand, our method correctly decodes them by exposing diverse, yet adversarial subword sequence for effectively regularizing NMT models in low-resource datasets.
+On the other hand, our method correctly decodes them by exposing diverse, yet adversarial subword sequence which effectively regularizes NMT models in the low-resource datasets.
 
 ## Requirements
 
@@ -25,7 +25,7 @@ $ conda create -n adv_sr python=3.6
 $ conda activate adv_sr
 $ conda install numpy tqdm nltk
 $ pip install sentencepiece
-$ conda install pytorch=1.1.0 cudatoolkit=9.0 -c pytorch
+$ pip install torch==1.2.0 torchvision==0.4.0
 ```
 
 Clone & Build
@@ -47,27 +47,11 @@ We use the [Fairseq](https://github.com/pytorch/fairseq) (v0.8.0) for training, 
 You can run ```bash get_data_iwslt15_cs_en.sh``` for downloading and preprocessing the dataset of IWSLT15_CS_EN.
 The preprocessed dataset can be downloaded from the following link.
 
-- [IWSLT15_CS_EN](https://drive.google.com/open?id=1nqTQba0IcJiXUal7fx3s-KUFRCfMPpaj)
+- [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
 
 ## Train
 
 The following example trains transformer-base model on IWSLT15_CS_EN.
-
-```bash
-CUDA=0
-CHECK_DIR=iwslt15.cs.en
-DATA_DIR=iwslt15.cs.en
-SPM_DIR=iwslt15.cs.en.sentencepiece.sp.model
-
-CUDA_VISIBLE_DEVICES=${CUDA} python train.py ${DATA_DIR} 
-                             --max-update 12800 --ddp-backend=no_c10d --arch transformer --optimizer adam --share-decoder-input-output-embed 
-                             --adam-betas '(0.9, 0.98)' --lr 0.0005 --lr-scheduler inverse_sqrt --min-lr '1e-09' 
-	                           --warmup-updates 4000 --warmup-init-lr '1e-07'  --label-smoothing 0.1 --criterion label_smoothed_cross_entropy --dropout 0.3 --weight-decay 0.0001 
-                             --save-dir ${CHECK_DIR} --max-tokens 4096 --no-epoch-checkpoints 
- 		                         --update-freq 8 --num_cands 9 --src_pert_prob 0.25 --tgt_pert_prob 0.25 --adv_sr --sp_model ${SPM_DIR}
-```
-
-or
 
 ```bash
 CUDA=0
@@ -82,11 +66,12 @@ GPU memory will be variable upon training due to the variable length of the adve
 If OOM occurs(rarely happens), the optimizer will simply skip training the corresponding batch. (as implemented in fairseq)
 We experimented with Tesla P40 and we present trained checkpoint from the example.
 
-- [IWSLT15_CS_EN](https://drive.google.com/open?id=1nqTQba0IcJiXUal7fx3s-KUFRCfMPpaj)
+- [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
 
 ## Evaluation
 
 The following example evaluates trained NMT model with the evaluation dataset from IWSLT15_CS_EN.
+We cloned and updated the codes from [SacreBLEU](https://github.com/mjpost/sacrebleu) for the evaluation of IWSLT15 & IWSLT13.
 
 ```bash
 make inference CUDA=${CUDA} TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en SP_MODEL=${SPM_DIR} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR}/checkpoint_best.pt
