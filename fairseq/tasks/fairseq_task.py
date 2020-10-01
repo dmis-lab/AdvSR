@@ -213,31 +213,28 @@ class FairseqTask(object):
     def get_adv_batch(self, sample, model, criterion, optimizer, args, src_cands, tgt_cands, task, ignore_grad=False): 
         
         model.train()
-        loss, sample_size, logging_output = criterion(model, sample)
+        loss, _ , _ = criterion(model, sample)
         if ignore_grad:
             loss *= 0
         optimizer.backward(loss)
 
-        src_embeddings_grad   = model.encoder.embed_tokens.weight.grad.clone().detach()
-        src_embeddings_grad   = src_embeddings_grad[sample['net_input']['src_tokens']]
+        src_embeddings_grad   = model.encoder.embed_tokens.weight.grad[sample['net_input']['src_tokens']].clone().detach()
         src_embeddings_weight = model.encoder.embed_tokens.weight.clone().detach()
-
-        tgt_embeddings_grad   = model.decoder.embed_tokens.weight.grad.clone().detach()
-        tgt_embeddings_grad   = tgt_embeddings_grad[sample['net_input']['prev_output_tokens']]
+        tgt_embeddings_grad   = model.decoder.embed_tokens.weight.grad[sample['net_input']['prev_output_tokens']].clone().detach()
         tgt_embeddings_weight = model.decoder.embed_tokens.weight.clone().detach()
 
         sample_adv = copy.deepcopy(sample)
 
-        sample_adv['net_input']['src_tokens'], sample_adv['net_input']['src_lengths'] = self.get_adv_token(sample, src_cands, src_embeddings_weight, src_embeddings_grad, \
+        sample_adv['net_input']['src_tokens'], sample_adv['net_input']['src_lengths'] = self.get_advsr(sample, src_cands, src_embeddings_weight, src_embeddings_grad, \
                                                                                                            task.source_dictionary, args, for_src=True)
 
-        sample_adv['net_input']['prev_output_tokens'], sample_adv['target'] = self.get_adv_token(sample, tgt_cands, tgt_embeddings_weight, tgt_embeddings_grad, \
+        sample_adv['net_input']['prev_output_tokens'], sample_adv['target'] = self.get_advsr(sample, tgt_cands, tgt_embeddings_weight, tgt_embeddings_grad, \
                                                                                                  task.target_dictionary, args, for_src=False)       
         
         return sample_adv
         
 
-    def get_adv_token(self, batch, cands, embeddings_weight, gradients, dictionary, args, for_src):
+    def get_advsr(self, batch, cands, embeddings_weight, gradients, dictionary, args, for_src):
         
         if for_src:
             embeddings = embeddings_weight[batch['net_input']['src_tokens']] # B x S(pad sent eos) x D
@@ -246,7 +243,7 @@ class FairseqTask(object):
 
         batch_offset, batch_cands, batch_cands_mask, cands_replace = cands[int(batch['id'][0])] # batch_offset no eos version
         
-        ''' Orig Offsetwise Embedding & Gradient Average '''
+        ''' Original Input Word Offsetwise Embedding & Gradient Average '''
 
         batch_offset  = torch.tensor(batch_offset).long().to(device)
         batch_size    = batch_offset.size(0) 
@@ -261,13 +258,11 @@ class FairseqTask(object):
         else:
             mask = torch.cat([eos, mask], dim = 2)
 
-        # reverify
-
         mask  = F.normalize(mask, p=1, dim = 2)
         embedding_offset = torch.bmm(mask, embeddings)[:,1:,:]
         gradient_offset  = torch.bmm(mask, gradients)[:,1:,:]
         
-        ''' Cands Offsetwise Embedding Average '''
+        ''' Candidate Word Offsetwise Embedding Average '''
 
         batch_cands        = torch.tensor(batch_cands).long().to(device)  
         mask               = torch.tensor(batch_cands_mask).type(torch.FloatTensor).to(device)
@@ -281,13 +276,10 @@ class FairseqTask(object):
 
         ''' Getting Similarity '''
 
-        embeddings = embeddings - embedding_offset.unsqueeze(2) # (B S 1 H // B S C H) -> B S C H
-        
-        sim = F.cosine_similarity(embeddings, gradient_offset.unsqueeze(2), dim=3) # normalizing
-        sim = torch.max(sim, dim=2)[1] # TODO : CHANGE
-        sim = np.array(sim.cpu())
-
-        # TODO : parallel? More fast version?
+        embeddings = embeddings - embedding_offset.unsqueeze(2) # max (W^T - w')*G
+        sim        = F.cosine_similarity(embeddings, gradient_offset.unsqueeze(2), dim=3) # normalizing
+        sim        = torch.max(sim, dim=2)[1] 
+        sim        = np.array(sim.cpu())
 
         if for_src:
             adv_batch_idx = []
@@ -352,12 +344,10 @@ class FairseqTask(object):
         temp[max_sequence-len(sample):] = sample
         return temp.astype(int)
 
-
     def pad_seq_tgt(self, sample, max_sequence, dictionary):
         temp = np.full(max_sequence, dictionary.pad())
         temp[:len(sample)] = sample
         return temp.astype(int)
-
 
     def train_step(self, sample, model, criterion, optimizer, ignore_grad=False):
         """

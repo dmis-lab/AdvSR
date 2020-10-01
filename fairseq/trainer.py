@@ -233,8 +233,6 @@ class Trainer(object):
         
         adv_samples = []
         
-        # Generating Adv Samples
-
         for i, sample in enumerate(samples):
             sample = self._prepare_sample(sample)
             if sample is None:
@@ -290,9 +288,9 @@ class Trainer(object):
                     self.zero_grad()
                 else:
                     raise e
-                    
-        # Training Part
-        
+
+        # train with advsr samples
+            
         for i, adv_sample in enumerate(adv_samples):
             
             sample = self._prepare_sample(adv_sample)
@@ -470,7 +468,15 @@ class Trainer(object):
                     return contextlib.ExitStack()  # dummy contextmanager
 
             try: # training with original segmentation or the adversarial ones
-                if not args.adv_sr:
+                if args.adv_sr:
+                    with maybe_no_sync():
+                        adv_sample = self.task.get_adv_batch(
+                            sample, self.model, self.criterion, self.optimizer, args, src_cands, tgt_cands, task, ignore_grad, 
+                        )
+                        adv_samples.append(adv_sample)
+                        self.zero_grad() # only train with adv_samples
+
+                else:
                     with maybe_no_sync():
                         # forward and backward
                         loss, sample_size, logging_output = self.task.train_step(
@@ -480,13 +486,7 @@ class Trainer(object):
                     if not ignore_grad:
                         logging_outputs.append(logging_output)
                         sample_sizes.append(sample_size)
-                else:
-                    with maybe_no_sync():
-                        adv_sample = self.task.get_adv_batch(
-                            sample, self.model, self.criterion, self.optimizer, args, src_cands, tgt_cands, task, ignore_grad, 
-                        )
-                        adv_samples.append(adv_sample)
-                        self.zero_grad() # only train with adv_samples
+                    
 
             except RuntimeError as e:
                 if 'out of memory' in str(e):

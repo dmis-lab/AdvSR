@@ -19,7 +19,9 @@ try:
     import nsml
     from nsml import DATASET_PATH
     from nsml import SESSION_NAME
+    USE_NSML=True
 except:
+    USE_NSML=False
     pass
 
 
@@ -64,10 +66,10 @@ def make_batches(lines, args, task, max_positions, encode_fn):
 def main(args):
     
     # NSML Modified
-
-    args.data  = DATASET_PATH + '/FAIR/Data/{}'.format(args.data)
-    args.input = DATASET_PATH + '/FAIR/Inference_Data/{}'.format(args.input)
-    args.path  = DATASET_PATH + '/FAIR/Checkpoints/{}'.format(args.path)
+    if USE_NSML:
+        args.data  = DATASET_PATH + '/FAIR/Data/{}'.format(args.data)
+        args.input = DATASET_PATH + '/FAIR/Inference_Data/{}'.format(args.input)
+        args.path  = DATASET_PATH + '/FAIR/Checkpoints/{}'.format(args.path)
         
     utils.import_user_module(args)
 

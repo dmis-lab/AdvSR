@@ -35,6 +35,7 @@ def main(args, init_distributed=False):
 
     # NSML TEMP TODO: REMOVE
     if USE_NSML:
+        print("| training on NSML")
         args.data     = DATASET_PATH + '/FAIR/Data/{}'.format(args.data)
         args.save_dir = DATASET_PATH + '/FAIR/Checkpoints/{}'.format(args.save_dir)
         args.sp_model = args.data + '/sentencepiece.bpe.model'
@@ -149,8 +150,9 @@ def train(args, trainer, task, epoch_itr, src_cands, tgt_cands):
     max_update = args.max_update or math.inf
     for i, samples in enumerate(progress, start=epoch_itr.iterations_in_epoch):
         if args.adv_sr:
-            log_output = trainer.train_step(samples, args, src_cands, tgt_cands, task)
-
+            log_output = trainer.train_step_adv(samples, args, src_cands, tgt_cands, task)
+        else:
+            log_output = trainer.train_step(samples)
         if log_output is None:
             continue
 
@@ -323,7 +325,7 @@ def cli_main():
     parser.add_argument("--num_cands",       default=9,           type=int,       help='pre-defined number of segmentation candidates')
     parser.add_argument("--src_pert_prob",   default=0.33,        type=float,     help='perturbation ratio for the source sentence')
     parser.add_argument("--tgt_pert_prob",   default=0.33,        type=float,     help='perturbation ratio for the target sentence')
-    parser.add_argument("--sp_model",        required=True,       help='directory to sentencepiece module for pre-segmenting candidates')
+    parser.add_argument("--sp_model",        help='directory to sentencepiece module for pre-segmenting candidates')
     
     args = options.parse_args_and_arch(parser)
 

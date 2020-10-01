@@ -1,18 +1,19 @@
-# cs en
+# # cs en
 
-# for LOG_NUM in 108 109 # 0.25 & 0.33 best 32.5
+# for LOG_NUM in 520  # 0.25 & 0.33 best 32.5
 # do
 #     nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
 #     make get_bleu LOGS=logs TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en
 # done
 
-# # en cs 
+# # # en cs 
 
-# for LOG_NUM in 112 113 # 0.33 best 23.5
+# for LOG_NUM in 521 # 0.33 best 23.5
 # do
 #     nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
 #     make get_bleu LOGS=logs TEST_DATA=iwslt15/tst2013 SRC=en TGT=cs
 # done
+
 
 # # vi en
 
@@ -75,13 +76,13 @@
 #     make get_bleu LOGS=logs TEST_DATA=iwslt17/tst2015 SRC=en TGT=fr
 # done
 
-# for LOG_NUM in 167 168
-# do
-#     nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
-#     make get_bleu LOGS=logs TEST_DATA=iwslt17/tst2015 SRC=ar TGT=en
-# done
+for LOG_NUM in 532
+do
+    nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
+    make get_bleu LOGS=logs TEST_DATA=iwslt17/tst2015 SRC=ar TGT=en
+done
 
-# for LOG_NUM in 166 163
+# for LOG_NUM in 528 529
 # do
 #     nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
 #     make get_bleu LOGS=logs TEST_DATA=iwslt17/tst2015 SRC=en TGT=ar
@@ -89,9 +90,15 @@
 
 
 
-for LOG_NUM in 408 409 410 411 412
-do
-    nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
-    make get_bleu LOGS=logs TEST_DATA=iwslt17/tst2015 SRC=fr TGT=en
-done
+# for LOG_NUM in 522 523
+# do
+#     nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
+#     make get_bleu LOGS=logs TEST_DATA=iwslt17/tst2015 SRC=fr TGT=en
+# done
 
+
+# for LOG_NUM in 524 525
+# do
+#     nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
+#     make get_bleu LOGS=logs TEST_DATA=iwslt17/tst2015 SRC=en TGT=fr
+# done

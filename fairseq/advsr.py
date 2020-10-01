@@ -4,9 +4,6 @@ import copy
 import numpy as np
 from fairseq import progress_bar
 
-use_cuda = torch.cuda.is_available()
-device   = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 def get_candidates(epoch_itr, args, tokenizer, task):
     
     '''
