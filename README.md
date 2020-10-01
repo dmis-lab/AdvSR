@@ -59,12 +59,12 @@ CHECK_DIR=iwslt15.cs.en
 DATA_DIR=iwslt15.cs.en
 SPM_DIR=iwslt15.cs.en.sentencepiece.sp.model
 
-make train CUDA=${CUDA} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR} NUM_CANDS=9 SRC_PERT_PROB=0.33 TGT_PERT_PROB=0.33 SP_MODEL=${SPM_DIR}
+make train CUDA=${CUDA} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR} NUM_CANDS=9 SRC_PERT_PROB=0.25 TGT_PERT_PROB=0.25 SP_MODEL=${SPM_DIR}
 ```
 
 GPU memory will be variable upon training due to the variable length of the adversarially generated sequence.
 If OOM occurs(rarely happens), the optimizer will simply skip training the corresponding batch. (as implemented in fairseq)
-We experimented with Tesla P40 and we present trained checkpoint from the example.
+We experimented with Tesla P40 and we present our trained checkpoint from the example.
 
 - [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
 

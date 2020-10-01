@@ -281,7 +281,7 @@ class Trainer(object):
                         # to stdout, which is buffered, which in many case is not
                         # printed out if another exception happens
                         # print(msg)
-                    print(msg, file=sys.stderr)
+                    # print(msg, file=sys.stderr)
                     if raise_oom:
                         raise ValueError(msg)
                     ooms += 1
@@ -325,7 +325,7 @@ class Trainer(object):
                         # to stdout, which is buffered, which in many case is not
                         # printed out if another exception happens
                         # print(msg)
-                    print(msg, file=sys.stderr)
+                    # print(msg, file=sys.stderr)
                     if raise_oom:
                         raise ValueError(msg)
                     ooms += 1
@@ -468,24 +468,15 @@ class Trainer(object):
                     return contextlib.ExitStack()  # dummy contextmanager
 
             try: # training with original segmentation or the adversarial ones
-                if args.adv_sr:
-                    with maybe_no_sync():
-                        adv_sample = self.task.get_adv_batch(
-                            sample, self.model, self.criterion, self.optimizer, args, src_cands, tgt_cands, task, ignore_grad, 
-                        )
-                        adv_samples.append(adv_sample)
-                        self.zero_grad() # only train with adv_samples
-
-                else:
-                    with maybe_no_sync():
-                        # forward and backward
-                        loss, sample_size, logging_output = self.task.train_step(
-                            sample, self.model, self.criterion, self.optimizer,
-                            ignore_grad
-                        )
-                    if not ignore_grad:
-                        logging_outputs.append(logging_output)
-                        sample_sizes.append(sample_size)
+                with maybe_no_sync():
+                    # forward and backward
+                    loss, sample_size, logging_output = self.task.train_step(
+                        sample, self.model, self.criterion, self.optimizer,
+                        ignore_grad
+                    )
+                if not ignore_grad:
+                    logging_outputs.append(logging_output)
+                    sample_sizes.append(sample_size)
                     
 
             except RuntimeError as e:
@@ -499,56 +490,13 @@ class Trainer(object):
                     # to stdout, which is buffered, which in many case is not
                     # printed out if another exception happens
                     # print(msg)
-                    print(msg, file=sys.stderr)
+                    # print(msg, file=sys.stderr)
                     if raise_oom:
                         raise ValueError(msg)
                     ooms += 1
                     self.zero_grad()
                 else:
                     raise e
-
-        if args.adv_sr:
-            for i, adv_sample in enumerate(adv_samples):
-                
-                sample = self._prepare_sample(adv_sample)
-
-                if sample is None:
-                    # when sample is None, run forward/backward on a dummy batch
-                    # and ignore the resulting gradients
-                    sample = self._prepare_sample(self._dummy_batch)
-                    ignore_grad = True
-                else:
-                    ignore_grad = False
-
-                try:
-                    with maybe_no_sync():
-                        # forward and backward
-                        loss, sample_size, logging_output = self.task.train_step(
-                            sample, self.model, self.criterion, self.optimizer, ignore_grad
-                        )
-                        
-                    if not ignore_grad:
-                        logging_outputs.append(logging_output)
-                        sample_sizes.append(sample_size)
-
-                except RuntimeError as e:
-                    if 'out of memory' in str(e):
-                        msg = (
-                            '| WARNING: ran out of memory with exception: '
-                            + '{};'.format(e)
-                            + '\n Skipping batch'
-                            )
-                            # TODO: print should really go to logger, this print goes
-                            # to stdout, which is buffered, which in many case is not
-                            # printed out if another exception happens
-                            # print(msg)
-                        print(msg, file=sys.stderr)
-                        if raise_oom:
-                            raise ValueError(msg)
-                        ooms += 1
-                        self.zero_grad()
-                    else:
-                        raise e
     
         if ooms > 0 and self._oom_batch is not None:
             self.handle_ooms(ooms)
