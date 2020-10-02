@@ -2,7 +2,14 @@
 
 # cs <-> en
 
-make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_ADV_0.25/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
+# make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_ADV_0.25/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
+# make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_RE_ADV_0.25/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
+# make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_RE_RE_ADV_0.25/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
+make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_RE_RE_RE_ADV_0.25/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
+make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_RE_RE_RE_RE_ADV_0.25/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
+# make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_RE_RE_RE_RE_RE_ADV_0.25/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
+
+
 # make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_RE_ADV_0.33/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
 # make inference ARGS="cs.en.sp16k  --input test.cs-en.cs.sp --source-lang cs --target-lang en --path IWSLT15_CS_EN_ADV_0.33/checkpoint_best.pt --buffer-size 2000 --batch-size 128 --beam 4 --remove-bpe sentencepiece" 
 

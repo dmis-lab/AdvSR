@@ -46,18 +46,28 @@ We use the [Fairseq](https://github.com/pytorch/fairseq) (v0.8.0) for training, 
 
 The preprocessed dataset can be downloaded from the following link.
 
-- [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
+- [IWSLT16_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
+
+Also, you can manually download and preprocess the dataset (IWSLT15.CS.EN) by following example.
+
+```bash
+bash prepare_iwslt15_cs_en.sh
+DIR=iwslt15.cs.en.sp16k
+DATA_DIR=data-bin/iwslt15.cs.en
+cd run/
+make preprocess TEXT=${DIR}
+cd ../
+mv iwslt15.cs.en.sp16k/sentencepiece.sp.model data-bin/iwslt15.cs.en/.
+```
 
 ## Train
 
-The following example trains transformer-base model on IWSLT15_CS_EN.
+The following example trains transformer-base model on IWSLT16_CS_EN.
 
 ```bash
 CUDA=0
-CHECK_DIR=iwslt15.cs.en
-DATA_DIR=iwslt15.cs.en
-SPM_DIR=iwslt15.cs.en.sentencepiece.sp.model
-
+CHECK_DIR=iwslt15.cs.en.ckpt
+SPM_DIR=iwslt15.cs.en/sentencepiece.sp.model
 make train CUDA=${CUDA} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR} NUM_CANDS=9 SRC_PERT_PROB=0.25 TGT_PERT_PROB=0.25 SP_MODEL=${SPM_DIR}
 ```
 
@@ -65,12 +75,12 @@ GPU memory will be variable upon training due to the variable length of the adve
 If OOM occurs(rarely happens), the optimizer will simply skip training the corresponding batch. (as implemented in fairseq)
 We experimented with Tesla P40 and we present our trained checkpoint from the example.
 
-- [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
+- [IWSLT16_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
 
 ## Evaluation
 
-The following example evaluates trained NMT model with the evaluation dataset from IWSLT15_CS_EN.
-We cloned and updated the codes from [SacreBLEU](https://github.com/mjpost/sacrebleu) for the evaluation of IWSLT15 & IWSLT13.
+The following example evaluates trained NMT model with the evaluation dataset from IWSLT16_CS_EN.
+We cloned and updated the codes from [SacreBLEU](https://github.com/mjpost/sacrebleu) for the evaluation of IWSLT15, IWSLT13.
 
 ```bash
 make inference CUDA=${CUDA} TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en SP_MODEL=${SPM_DIR} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR}/checkpoint_best.pt

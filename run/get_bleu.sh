@@ -1,6 +1,6 @@
 # # cs en
 
-for LOG_NUM in 538
+for LOG_NUM in 543 544
 do
     nsml logs KR62623/lpt_nfs3/$LOG_NUM > logs
     make get_bleu LOGS=logs TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en
