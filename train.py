@@ -38,7 +38,7 @@ def main(args, init_distributed=False):
         print("| training on NSML")
         args.data     = DATASET_PATH + '/FAIR/Data/{}'.format(args.data)
         args.save_dir = DATASET_PATH + '/FAIR/Checkpoints/{}'.format(args.save_dir)
-        args.sp_model = args.data + '/sentencepiece.bpe.model'
+        args.sp_model = args.data + '/sentencepiece.sp.model'
     
     if args.adv_sr:
         print("| training with AdvSR")
