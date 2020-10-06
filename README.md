@@ -16,7 +16,7 @@
 
 We present AdvSR to study whether gradient signals during training can be a substitute criterion for choosing segmentation among candidates.
 NMT models suffer from typos(character drop, character swap) in the source text due to the unseen subword compositions ( _ denotes segmentation). 
-Our method correctly decodes them by exposing diverse, yet adversarial subword sequence which effectively regularizes NMT models in the low-resource datasets.
+Our method correctly decodes them by exposing diverse, yet adversarial subword sequence which conda create -n adv_sr python=3.6regularizes NMT models in the low-resource datasets.
 
 ## Requirements
 
@@ -25,13 +25,13 @@ $ conda create -n adv_sr python=3.6
 $ conda activate adv_sr
 $ conda install numpy tqdm nltk
 $ pip install sentencepiece
-$ pip install torch==1.2.0 torchvision==0.4.0
+$ pip install torch==1.2.0
 ```
 
 Clone & Build
 
 ```
-$ git clone https://github.com/JJumSSu/AdvSR.git
+$ git clone https://github.com/dmis-lab/AdvSR.git
 $ cd AdvSR
 $ pip install .
 ```
