@@ -1,8 +1,8 @@
 preprocess:
-	python ../preprocess.py \
+	python preprocess.py \
 		--source-lang cs --target-lang en \
-		--trainpref ../${TEXT}/train.sp.cs-en --validpref ../${TEXT}/valid.sp.cs-en \
-		--destdir ../data-bin/iwslt15.cs.en --joined-dictionary \
+		--trainpref ${RAW_DIR}/train.sp.cs-en --validpref ${RAW_DIR}/valid.sp.cs-en \
+		--destdir ${DATA_DIR} --joined-dictionary \
 		--workers 4
 
 train_adv:
@@ -25,7 +25,7 @@ train_adv:
 		--num_cands ${NUM_CANDS} \
 		--src_pert_prob ${SRC_PERT_PROB} \
 		--tgt_pert_prob ${TGT_PERT_PROB} \
-		--sp_model ${SPM_DIR}
+		--sp_model ${SPM_DIR} \
 		--adv_sr 
 
 inference:
@@ -34,7 +34,7 @@ inference:
 		> test.${SRC}-${TGT}.${SRC}.sp \
 												
 	cat iwslt17.test.${SRC}-${TGT}.${SRC}.sp | CUDA_VISIBLE_DEVICES=${CUDA} fairseq-interactive ${DATA} \
-	--source-lang ${SRC} --target-lang ${TGT} --path ${CHECK_DIR} --buffer-size 2000 --batch-size 128\
+	--source-lang ${SRC} --target-lang ${TGT} --path checkpoints/${CHECK_DIR} --buffer-size 2000 --batch-size 128\
 	--beam 4  --remove-bpe sentencepiece \
 	> test.${SRC}-${TGT}.${TGT}.sys
 

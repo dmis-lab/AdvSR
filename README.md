@@ -52,10 +52,10 @@ Also, you can manually download and preprocess the dataset (IWSLT15.CS.EN) by fo
 
 ```bash
 bash prepare_iwslt15_cs_en.sh
-DIR=iwslt15.cs.en.sp16k
+RAW_DIR=iwslt15.cs.en.sp16k
 DATA_DIR=data-bin/iwslt15.cs.en
-make preprocess TEXT=${DIR}
-mv iwslt15.cs.en.sp16k/sentencepiece.sp.model data-bin/iwslt15.cs.en/.
+make preprocess RAW_DIR=${RAW_DIR} DATA_DIR=${DATA_DIR}
+mv ${RAW_DIR}/sentencepiece.sp.model ${DATA_DIR}/.
 ```
 
 ## Train
@@ -65,8 +65,8 @@ The following example trains transformer-base model on IWSLT15_CS_EN.
 ```bash
 CUDA=0
 CHECK_DIR=iwslt15.cs.en.ckpt
-SPM_DIR=iwslt15.cs.en/sentencepiece.sp.model
-make train CUDA=${CUDA} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR} NUM_CANDS=9 SRC_PERT_PROB=0.25 TGT_PERT_PROB=0.25 SP_MODEL=${SPM_DIR}
+SPM_DIR=${DATA_DIR}/sentencepiece.sp.model
+make train_adv CUDA=${CUDA} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR} NUM_CANDS=9 SRC_PERT_PROB=0.25 TGT_PERT_PROB=0.25 SPM_DIR=${SPM_DIR}
 ```
 
 GPU memory will be variable upon training due to the variable length of the adversarially generated sequence.
@@ -81,7 +81,7 @@ The following example evaluates trained NMT model with the evaluation dataset fr
 We cloned and updated the codes from [SacreBLEU](https://github.com/mjpost/sacrebleu) for the evaluation of IWSLT15, IWSLT13.
 
 ```bash
-make inference CUDA=${CUDA} TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en SP_MODEL=${SPM_DIR} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR}/checkpoint_best.pt
+make inference CUDA=${CUDA} TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en SPM_DIR=${SPM_DIR} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR}/checkpoint_best.pt
 ```
 
 ### Result

@@ -132,6 +132,10 @@ def main(args, init_distributed=False):
 def train(args, trainer, task, epoch_itr, src_cands, tgt_cands):
     """Train the model for one epoch."""
     # Update parameters every N batches
+    
+    print('| training')
+    epoch_itr.epoch -= 1
+
     update_freq = args.update_freq[epoch_itr.epoch - 1] \
         if epoch_itr.epoch <= len(args.update_freq) else args.update_freq[-1]
 
