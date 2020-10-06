@@ -11,7 +11,7 @@
 </div>
 
 <div align="center">
-  <img alt="intro" src="https://github.com/dmis-lab/AdvSR/tree/master/img" width="400px">
+  <img alt="intro" src="https://github.com/dmis-lab/AdvSR/tree/master/img/algorithm.png" width="400px">
 </div>
 
 We present AdvSR to study whether gradient signals during training can be a substitute criterion for choosing segmentation among candidates.
