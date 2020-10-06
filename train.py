@@ -22,23 +22,7 @@ from fairseq.meters import AverageMeter, StopwatchMeter
 
 from fairseq.advsr import get_candidates
 
-try:
-    import nsml
-    from nsml import DATASET_PATH
-    from nsml import SESSION_NAME
-    USE_NSML=True
-except:
-    USE_NSML=False
-    pass
-
 def main(args, init_distributed=False):
-
-    # NSML TEMP TODO: REMOVE
-    if USE_NSML:
-        print("| training on NSML")
-        args.data     = DATASET_PATH + '/FAIR/Data/{}'.format(args.data)
-        args.save_dir = DATASET_PATH + '/FAIR/Checkpoints/{}'.format(args.save_dir)
-        args.sp_model = args.data + '/sentencepiece.sp.model'
     
     if args.adv_sr:
         print("| training with AdvSR")

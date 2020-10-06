@@ -15,19 +15,8 @@ import torch
 from fairseq import checkpoint_utils, options, tasks, utils
 from fairseq.data import encoders
 
-try:
-    import nsml
-    from nsml import DATASET_PATH
-    from nsml import SESSION_NAME
-    USE_NSML=True
-except:
-    USE_NSML=False
-    pass
-
-
 Batch = namedtuple('Batch', 'ids src_tokens src_lengths')
 Translation = namedtuple('Translation', 'src_str hypos pos_scores alignments')
-
 
 def buffered_read(input, buffer_size):
     buffer = []
@@ -65,12 +54,6 @@ def make_batches(lines, args, task, max_positions, encode_fn):
 
 def main(args):
     
-    # NSML Modified
-    if USE_NSML:
-        args.data  = DATASET_PATH + '/FAIR/Data/{}'.format(args.data)
-        args.input = DATASET_PATH + '/FAIR/Inference_Data/{}'.format(args.input)
-        args.path  = DATASET_PATH + '/FAIR/Checkpoints/{}'.format(args.path)
-        
     utils.import_user_module(args)
 
     if args.buffer_size < 1:
