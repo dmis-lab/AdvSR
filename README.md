@@ -11,7 +11,7 @@
 </div>
 
 <div align="center">
-  <img alt="intro" src="https://github.com/JJumSSu/AdvSR/blob/master/img/figure.png" width="400px">
+  <img alt="intro" src="https://github.com/JJumSSu/AdvSR/blob/master/img/alg.png" width="400px">
 </div>
 
 We present AdvSR to study whether gradient signals during training can be a substitute criterion for choosing segmentation among candidates.
@@ -70,7 +70,7 @@ make train_adv CUDA=${CUDA} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR} NUM_CANDS=9 
 ```
 
 GPU memory will be variable upon training due to the variable length of the adversarially generated sequence.
-If OOM occurs(rarely happens), the optimizer will simply skip training the corresponding batch. (as implemented in fairseq)
+If OOM occurs(rarely happens), the optimizer will simply skip training the corresponding batch (as implemented in fairseq).
 We experimented with Tesla P40 and present our trained checkpoint from the example.
 
 - [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
