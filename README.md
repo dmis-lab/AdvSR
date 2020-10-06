@@ -89,7 +89,7 @@ make inference CUDA=${CUDA} TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en SP_MODEL=${S
 The result is as follows.
 
 ```bash
-BLEU+case.lc+lang.cs-en+numrefs.1+smooth.exp+test.iwslt15/tst2013+tok.13a+version.1.4.2 = 32.5 66.6/40.4/26.5/18.1 (BP = 0.963 ratio = 0.963 hyp_len = 26497 ref_len = 27502)
+BLEU+case.lc+lang.cs-en+numrefs.1+smooth.exp+test.iwslt15/tst2013+tok.13a+version.1.4.2 = 32.1 66.5/40.4/26.5/18.1 (BP = 0.954 ratio = 0.955 hyp_len = 26272 ref_len = 27502)
 ```
 
 ## Citation
