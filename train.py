@@ -90,6 +90,10 @@ def main(args, init_distributed=False):
     train_meter.start()
     valid_losses = [None]
     valid_subsets = args.valid_subset.split(',')
+
+    print('| training')
+    epoch_itr.epoch -= 1
+
     while lr > args.min_lr and epoch_itr.epoch < max_epoch and trainer.get_num_updates() < max_update:
         # train for one epoch
         train(args, trainer, task, epoch_itr, src_cands, tgt_cands)
@@ -117,9 +121,6 @@ def train(args, trainer, task, epoch_itr, src_cands, tgt_cands):
     """Train the model for one epoch."""
     # Update parameters every N batches
     
-    print('| training')
-    epoch_itr.epoch -= 1
-
     update_freq = args.update_freq[epoch_itr.epoch - 1] \
         if epoch_itr.epoch <= len(args.update_freq) else args.update_freq[-1]
 
