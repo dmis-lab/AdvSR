@@ -65,6 +65,7 @@ The following example trains transformer-base model on IWSLT15_CS_EN.
 ```bash
 CUDA=0
 CHECK_DIR=iwslt15.cs.en.ckpt
+DATA_DIR=data-bin/iwslt15.cs.en
 SPM_DIR=${DATA_DIR}/sentencepiece.sp.model
 make train_adv CUDA=${CUDA} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR} NUM_CANDS=9 SRC_PERT_PROB=0.25 TGT_PERT_PROB=0.25 SPM_DIR=${SPM_DIR}
 ```
@@ -75,12 +76,18 @@ We experimented with Tesla P40 and present our trained checkpoint from the examp
 
 - [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
 
+Note that if you want to evaluate with the pre-trained checkpoint from the above link, you may want to use the preprocessed data-file from the drive since the vocabulary index might be different.
+
 ## Evaluation
 
 The following example evaluates trained NMT model with the evaluation dataset from IWSLT15_CS_EN.
 We cloned and updated the codes from [SacreBLEU](https://github.com/mjpost/sacrebleu) for the evaluation of IWSLT15, IWSLT13.
 
 ```bash
+CUDA=0
+CHECK_DIR=iwslt15.cs.en.ckpt
+DATA_DIR=data-bin/iwslt15.cs.en
+SPM_DIR=${DATA_DIR}/sentencepiece.sp.model
 make inference CUDA=${CUDA} TEST_DATA=iwslt15/tst2013 SRC=cs TGT=en SPM_DIR=${SPM_DIR} DATA=${DATA_DIR} CHECK_DIR=${CHECK_DIR}/checkpoint_best.pt
 ```
 

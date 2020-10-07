@@ -18,7 +18,7 @@ train_adv:
 	    --warmup-updates 4000 --warmup-init-lr '1e-07' \
 	    --label-smoothing 0.1 --criterion label_smoothed_cross_entropy \
 	    --dropout 0.3 --weight-decay 0.0001 \
-	    --save-dir checkpoints/${CHECK_DIR} \
+	    --save-dir ${CHECK_DIR} \
 	    --max-tokens 4096 \
 	    --no-epoch-checkpoints \
 		--update-freq 8 \
@@ -33,8 +33,8 @@ inference:
 		| python scripts/spm_encode.py --model ${SPM_DIR} \
 		> test.${SRC}-${TGT}.${SRC}.sp \
 												
-	cat iwslt17.test.${SRC}-${TGT}.${SRC}.sp | CUDA_VISIBLE_DEVICES=${CUDA} fairseq-interactive ${DATA} \
-	--source-lang ${SRC} --target-lang ${TGT} --path checkpoints/${CHECK_DIR} --buffer-size 2000 --batch-size 128\
+	cat test.${SRC}-${TGT}.${SRC}.sp | CUDA_VISIBLE_DEVICES=${CUDA} python interactive.py ${DATA} \
+	--source-lang ${SRC} --target-lang ${TGT} --path ${CHECK_DIR} --buffer-size 2000 --batch-size 128 \
 	--beam 4  --remove-bpe sentencepiece \
 	> test.${SRC}-${TGT}.${TGT}.sys
 
