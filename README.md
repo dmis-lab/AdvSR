@@ -102,12 +102,11 @@ BLEU+case.lc+lang.cs-en+numrefs.1+smooth.exp+test.iwslt15/tst2013+tok.13a+versio
 ## Citation
 
 ```
-@inproceedings{park2020adversarial,
+@article{park2020adversarial,
   title={Adversarial Subword Regularization for Robust Neural Machine Translation},
-  author={Jungsoo Park, Mujeen Sung, Jinhyuk Lee and Jaewoo Kang},
-  journal={Proc. of EMNLP Findings},
+  author={Park, Jungsoo and Sung, Mujeen and Lee, Jinhyuk and Kang, Jaewoo},
+  journal={arXiv preprint arXiv:2004.14109},
   year={2020}
-  url = {https://arxiv.org/abs/2004.14109}
 }
 ```
 
