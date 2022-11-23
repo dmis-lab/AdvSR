@@ -46,7 +46,7 @@ We use the [Fairseq](https://github.com/pytorch/fairseq) (v0.8.0) for training, 
 
 The preprocessed dataset can be downloaded from the following link.
 
-- [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
+- [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1UF63H5t6N5m48ad7QYZWYBjWqnBvO7hn?usp=sharing)
 
 Also, you can manually download and preprocess the dataset (IWSLT15.CS.EN) by following example.
 
@@ -74,7 +74,7 @@ GPU memory will be variable upon training due to the variable length of the adve
 If OOM occurs(rarely happens), the optimizer will simply skip training the corresponding batch (as implemented in fairseq).
 We experimented with Tesla P40 and present our trained checkpoint from the example.
 
-- [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1C1Oq4MV0TzoMpsaK0zJHJhgyqhvQVFea?usp=sharing)
+- [IWSLT15_CS_EN](https://drive.google.com/drive/folders/1UF63H5t6N5m48ad7QYZWYBjWqnBvO7hn?usp=sharing)
 
 Note that if you want to evaluate with the pre-trained checkpoint from the above link, you may want to use the preprocessed data-file from the drive since the vocabulary index might be different.
 
